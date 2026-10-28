@@ -16,3 +16,9 @@ chrono = "0.4"
 ferrisetw = "1.2"
 tokio = { version = "1", features = ["rt", "time", "macros"] }
 sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "chrono"] }
+windows = { version = "0.57", features = [
+    "Win32_NetworkManagement_IpHelper", 
+    "Win32_Foundation", 
+    "Win32_Networking_WinSock", 
+    "Win32_System_Threading"
+] }

@@ -18,6 +18,7 @@ dependencies = [
  "shared",
  "sqlx",
  "tokio",
+ "windows",
 ]
 
 [[package]]
