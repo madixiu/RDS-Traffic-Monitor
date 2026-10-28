@@ -1,0 +1,18 @@
+[package]
+name = "agent"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+shared = { path = "../shared" }
+serde.workspace = true
+anyhow.workspace = true
+log.workspace = true
+env_logger = "0.11"
+ctrlc = "3"
+dashmap = "6"
+crossbeam-channel = "0.5"
+chrono = "0.4"
+ferrisetw = "1.2"
+tokio = { version = "1", features = ["rt", "time", "macros"] }
+sqlx = { version = "0.8", features = ["runtime-tokio", "postgres", "chrono"] }

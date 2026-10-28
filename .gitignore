@@ -1,0 +1,77 @@
+# ──────────────────────────────────────────────
+# Rust
+# ──────────────────────────────────────────────
+/target/
+**/target/
+**/*.rs.bk
+*.pdb
+
+# Cargo lockfile: KEEP for binaries (agent, dashboard), ignore for libraries.
+# Since "shared" is a workspace lib, keep the root lockfile committed.
+# (No rule needed — Cargo.lock is intentionally committed.)
+
+# ──────────────────────────────────────────────
+# Node / Vite / React
+# ──────────────────────────────────────────────
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.vite/
+**/.vite/
+*.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ──────────────────────────────────────────────
+# Environment / secrets
+# ──────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# ──────────────────────────────────────────────
+# SQLite leftovers (from the old agent version)
+# ──────────────────────────────────────────────
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# ──────────────────────────────────────────────
+# Agent runtime artifacts
+# ──────────────────────────────────────────────
+*.log
+agent.log
+agent.err.log
+service.log
+service.err.log
+traffic.db*
+
+# ──────────────────────────────────────────────
+# Cross-compile output (if you don't use target/)
+# ──────────────────────────────────────────────
+/x86_64-pc-windows-gnu/
+**/x86_64-pc-windows-gnu/
+
+# ──────────────────────────────────────────────
+# IDE / editor
+# ──────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ──────────────────────────────────────────────
+# RustRover / CLion / IntelliJ
+# ──────────────────────────────────────────────
+*.iml
+.idea/
