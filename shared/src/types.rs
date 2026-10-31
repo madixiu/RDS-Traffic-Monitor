@@ -25,4 +25,5 @@ pub struct TrafficEvent {
     pub remote_port: Option<u16>,
     pub is_udp: bool,
     pub hostname: String,
+    pub website: String, 
 }

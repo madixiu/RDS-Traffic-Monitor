@@ -22,3 +22,6 @@ windows = { version = "0.57", features = [
     "Win32_Networking_WinSock", 
     "Win32_System_Threading"
 ] }
+psl = "2.1"
+dns-lookup = "2.0"
+pcap = "1.3"
