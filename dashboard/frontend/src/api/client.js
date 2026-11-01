@@ -14,10 +14,16 @@ export async function fetchUsers(start, end) {
 }
 
 export async function fetchWebsites(username, start, end) {
-  const res = await fetch(`/api/users/${username}/websites?start=${start}&end=${end}`);
+  const res = await fetch(`/api/users/${encodeURIComponent(username)}/websites?start=${start}&end=${end}`);
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
+export async function fetchUserHistory(username, start, end) {
+  const res = await fetch(`/api/users/${encodeURIComponent(username)}/history?start=${start}&end=${end}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
 export async function fetchAllTimeReports() {
   const res = await fetch("/api/reports/all-time");
   if (!res.ok) throw new Error(`HTTP ${res.status}`);

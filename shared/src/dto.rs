@@ -38,3 +38,13 @@ pub struct DomainUserReport {
     pub bytes_sent: i64,
     pub bytes_recv: i64,
 }
+
+// Add this to shared/src/dto.rs if it's not there
+#[derive(Clone, Debug, Serialize, Deserialize, sqlx::FromRow)]
+pub struct UserDetailReport {
+    pub website: String,
+    pub hostname: String,
+    pub process_name: String,
+    pub bytes_sent: i64,
+    pub bytes_recv: i64,
+}

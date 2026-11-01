@@ -18,18 +18,18 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     let app = Router::new()
-        // Live Dashboard Routes
+        // Live Dashboard
         .route("/api/users", get(api::get_users))
         .route("/api/users/:username/websites", get(api::get_user_websites))
+        .route("/api/users/:username/history", get(api::get_user_history)) // <-- NEW ROUTE
         .route("/api/hosts", get(api::get_hosts))
         .route("/api/stream", get(sse::stream))
         
-        // Reports Page Routes
+        // Reports Page
         .route("/api/reports/all-time", get(api::get_all_time_reports))
         .route("/api/reports/top-domains", get(api::get_top_domains))
         .route("/api/reports/search", get(api::get_domain_users))
         
-        // Serve Frontend
         .fallback_service(ServeDir::new("frontend/dist"))
         .layer(CorsLayer::permissive())
         .with_state(pool);

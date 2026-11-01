@@ -1,21 +1,22 @@
 use anyhow::Result;
 use sqlx::PgPool;
-// THIS IS THE IMPORT LINE YOU ASKED ABOUT:
-use shared::{DomainReport, DomainUserReport, HostStatus, UserSummary, WebsiteSummary};
+use shared::{DomainReport, DomainUserReport, HostStatus, UserDetailReport, UserSummary, WebsiteSummary};
 
 pub async fn users_summary(pool: &PgPool, start: i64, end: i64) -> Result<Vec<UserSummary>> {
     let rows = sqlx::query_as::<_, UserSummary>(
         r#"
         SELECT
             username,
-            hostname,
+            STRING_AGG(DISTINCT hostname, ', ') AS hostname,
             SUM(bytes_sent)::BIGINT         AS bytes_sent,
             SUM(bytes_recv)::BIGINT         AS bytes_recv,
             COUNT(DISTINCT pid)::BIGINT     AS process_count,
             MAX(ts_minute)::BIGINT          AS last_seen
         FROM traffic_logs
         WHERE ts_minute >= $1 AND ts_minute <= $2
-        GROUP BY username, hostname
+          AND username NOT IN ('Administrator', 'SYSTEM', 'UNKNOWN', 'DefaultAccount', 'LOCAL SERVICE', 'NETWORK SERVICE', 'ANONYMOUS LOGON')
+          AND username NOT ILIKE '%Administrator%'
+        GROUP BY username
         ORDER BY (SUM(bytes_sent) + SUM(bytes_recv)) DESC
         "#,
     )
@@ -36,6 +37,29 @@ pub async fn user_websites(pool: &PgPool, username: &str, start: i64, end: i64) 
         FROM traffic_logs
         WHERE ts_minute >= $1 AND ts_minute <= $2 AND username = $3
         GROUP BY website
+        ORDER BY (SUM(bytes_sent) + SUM(bytes_recv)) DESC
+        "#,
+    )
+    .bind(start)
+    .bind(end)
+    .bind(username)
+    .fetch_all(pool)
+    .await?;
+    Ok(rows)
+}
+
+pub async fn user_detailed_history(pool: &PgPool, username: &str, start: i64, end: i64) -> Result<Vec<UserDetailReport>> {
+    let rows = sqlx::query_as::<_, UserDetailReport>(
+        r#"
+        SELECT
+            website,
+            hostname,
+            process_name,
+            SUM(bytes_sent)::BIGINT AS bytes_sent,
+            SUM(bytes_recv)::BIGINT AS bytes_recv
+        FROM traffic_logs
+        WHERE ts_minute >= $1 AND ts_minute <= $2 AND username = $3
+        GROUP BY website, hostname, process_name
         ORDER BY (SUM(bytes_sent) + SUM(bytes_recv)) DESC
         "#,
     )
@@ -78,6 +102,8 @@ pub async fn all_time_reports(pool: &PgPool) -> Result<Vec<UserSummary>> {
             0::BIGINT                       AS process_count,
             0::BIGINT                       AS last_seen
         FROM traffic_daily
+        WHERE username NOT IN ('Administrator', 'SYSTEM', 'UNKNOWN', 'DefaultAccount', 'LOCAL SERVICE', 'NETWORK SERVICE')
+          AND username NOT ILIKE '%Administrator%'
         GROUP BY username
         ORDER BY (SUM(bytes_sent) + SUM(bytes_recv)) DESC
         "#,
