@@ -286,6 +286,87 @@ cargo run --release -p dashboard
 
 The frontend development server may require a Vite proxy configuration to forward API requests to the Rust server.
 
+
+
+
+
+# Manual Agent Run Commands
+
+### Confirm you can run it from there
+```powershell
+cd 'C:\Users\Administrator\Documents'
+```
+### Set the env var for this shell only (smoke test)
+```powershell
+$env:DATABASE_URL = "postgres://rds_user:1234qwer%21%40%23%24@192.168.12.212:5432/rds_traffic"
+```
+```powershell
+$env:RUST_LOG = "info"
+```
+
+### Run in foreground
+```powershell
+.\agent.exe
+```
+
+
+# RDS Traffic Monitor Agent — Service Setup
+
+## Set Environment Variable
+
+```powershell
+[Environment]::SetEnvironmentVariable("DATABASE_URL","postgres://rds_user:1234qwer%21%40%23%24@192.168.12.212:5432/rds_traffic","Machine")
+```
+
+## Install & Configure the Service with NSSM
+
+### 1. Install the service
+
+```powershell
+& 'C:\Tools\nssm.exe' install RdsTrafficMonitor 'C:\Users\Administrator\Documents\agent.exe'
+```
+
+### 2. Set the working directory
+
+```powershell
+& 'C:\Tools\nssm.exe' set RdsTrafficMonitor AppDirectory 'C:\Users\Administrator\Documents'
+```
+
+### 3. Run as LocalSystem (required for ETW and Npcap visibility)
+
+```powershell
+& 'C:\Tools\nssm.exe' set RdsTrafficMonitor ObjectName 'LocalSystem'
+```
+
+### 4. Set it to start automatically on boot
+
+```powershell
+& 'C:\Tools\nssm.exe' set RdsTrafficMonitor Start 'SERVICE_AUTO_START'
+```
+
+### 5. Redirect logs for debugging
+
+```powershell
+& 'C:\Tools\nssm.exe' set RdsTrafficMonitor AppStdout 'C:\Users\Administrator\Documents\agent.log'
+& 'C:\Tools\nssm.exe' set RdsTrafficMonitor AppStderr 'C:\Users\Administrator\Documents\agent.err.log'
+```
+
+### 6. Enable log rotation (prevents logs from growing too large)
+
+```powershell
+& 'C:\Tools\nssm.exe' set RdsTrafficMonitor AppRotateFiles 1
+& 'C:\Tools\nssm.exe' set RdsTrafficMonitor AppRotateBytes 10485760
+```
+
+
+
+
+
+
+
+
+
+
 ## License
 
 Add your chosen license here before distributing the project.
