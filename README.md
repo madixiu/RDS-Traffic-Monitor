@@ -114,6 +114,8 @@ Traffic statistics are sent to a central PostgreSQL database. A lightweight Rust
 | Rust | 1.75 or newer | Development and dashboard server |
 | Node.js | 20 or newer | Frontend development and build |
 | PostgreSQL | 14 or newer | Central database server |
+| Nginx	| Any recent version| Dashboard reverse proxy |
+| Npcap |	1.70 or newer | RDS agent hosts (Crucial!) |
 | Windows Server | 2019 or 2022 | RDS agent hosts |
 | MinGW-w64 | 11 or newer | Windows GNU cross-compilation |
 | Linux | Compatible with the selected Rust toolchain | Dashboard server |
@@ -358,9 +360,31 @@ $env:RUST_LOG = "info"
 & 'C:\Tools\nssm.exe' set RdsTrafficMonitor AppRotateBytes 10485760
 ```
 
+# Dashboard Run As A Service
+```bash
+sudo tee /etc/systemd/system/rds-dashboard.service > /dev/null <<'EOF'
+[Unit]
+Description=RDS Traffic Dashboard (Axum + React)
+After=network.target postgresql.service
+Requires=postgresql.service
 
+[Service]
+Type=simple
+User=$USER
+Group=$GROUP
+# Make sure this path matches where your project actually is!
+WorkingDirectory=~/Desktop/rds-traffic-monitor
+EnvironmentFile=~/Desktop/rds-traffic-monitor/rds-dashboard.env
+ExecStart=~/Desktop/rds-traffic-monitor/target/release/dashboard
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
 
-
+[Install]
+WantedBy=multi-user.target
+EOF
+```
 
 
 
@@ -369,4 +393,6 @@ $env:RUST_LOG = "info"
 
 ## License
 
-Add your chosen license here before distributing the project.
+This project is licensed under the **GNU General Public License v3.0**.
+
+See the [LICENSE](LICENSE) file for the full text.
