@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0F172A" />
+      <stop offset="100%" stop-color="#1E293B" />
+    </linearGradient>
+
+    <!-- Lens Gradient -->
+    <linearGradient id="lensGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF" />
+      <stop offset="100%" stop-color="#3B82F6" />
+    </linearGradient>
+
+    <!-- Glow Effect for Traffic Pulse -->
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="2" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Grid Pattern -->
+    <pattern id="grid" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M 10 0 L 0 0 0 10" fill="none" stroke="#1E293B" stroke-width="1" opacity="0.6" />
+    </pattern>
+
+    <!-- Arrow Markers -->
+    <marker id="arrow-blue" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3B82F6" />
+    </marker>
+    <marker id="arrow-cyan" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#00E5FF" />
+    </marker>
+  </defs>
+
+  <!-- Background Base -->
+  <rect width="100" height="100" rx="20" fill="url(#bgGradient)" />
+  
+  <!-- Tech Grid Overlay -->
+  <rect width="100" height="100" rx="20" fill="url(#grid)" />
+
+  <!-- Outer Radar / Monitoring Ring -->
+  <circle cx="50" cy="50" r="42" stroke="#334155" stroke-width="2" fill="none" />
+  <circle cx="50" cy="50" r="42" stroke="url(#lensGradient)" stroke-width="2" fill="none" stroke-dasharray="10 6" opacity="0.8" />
+
+  <!-- Traffic Flow Arrows (Inbound & Outbound) -->
+  <path d="M 75 25 L 85 15" stroke="#00E5FF" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#arrow-cyan)" />
+  <path d="M 15 75 L 25 85" stroke="#3B82F6" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#arrow-blue)" />
+  <path d="M 15 25 L 25 15" stroke="#3B82F6" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#arrow-blue)" />
+  <path d="M 85 75 L 75 85" stroke="#00E5FF" stroke-width="3" fill="none" stroke-linecap="round" marker-end="url(#arrow-cyan)" />
+
+  <!-- Magnifying Glass Handle -->
+  <line x1="62" y1="62" x2="80" y2="80" stroke="#3B82F6" stroke-width="12" stroke-linecap="round" />
+  <line x1="64" y1="64" x2="78" y2="78" stroke="#00E5FF" stroke-width="4" stroke-linecap="round" opacity="0.5" />
+
+  <!-- Magnifying Glass Lens -->
+  <circle cx="42" cy="42" r="26" stroke="url(#lensGradient)" stroke-width="6" fill="#0B1121" />
+
+  <!-- Lens Reflection / Highlight -->
+  <path d="M 24 32 A 18 18 0 0 1 38 22" stroke="#FFFFFF" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.15" />
+
+  <!-- Traffic Pulse Line (Monitoring Activity) -->
+  <path d="M 20 42 L 30 42 L 35 28 L 45 56 L 50 42 L 64 42" stroke="#00E5FF" stroke-width="4" fill="none" stroke-linejoin="round" stroke-linecap="round" filter="url(#glow)" />
+
+  <!-- Data Nodes (Traffic Packets) -->
+  <circle cx="30" cy="42" r="2.5" fill="#00E5FF" />
+  <circle cx="35" cy="28" r="3" fill="#3B82F6" />
+  <circle cx="45" cy="56" r="3" fill="#3B82F6" />
+  <circle cx="50" cy="42" r="2.5" fill="#00E5FF" />
+  <circle cx="64" cy="42" r="2.5" fill="#00E5FF" />
+
+  <!-- Accent Dots -->
+  <circle cx="85" cy="85" r="2" fill="#00E5FF" opacity="0.6" />
+  <circle cx="15" cy="15" r="2" fill="#3B82F6" opacity="0.6" />
+</svg>

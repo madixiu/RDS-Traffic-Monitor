@@ -13,6 +13,8 @@ pub struct TimeParams {
 #[derive(Deserialize)]
 pub struct SearchParams {
     pub q: Option<String>,
+    pub start: Option<i64>,
+    pub end: Option<i64>,
 }
 
 pub async fn get_users(State(pool): State<PgPool>, Query(params): Query<TimeParams>) -> Result<Json<Vec<UserSummary>>, (axum::http::StatusCode, String)> {
@@ -52,8 +54,22 @@ pub async fn get_top_domains(State(pool): State<PgPool>) -> Result<Json<Vec<Doma
     db::top_domains(&pool).await.map(Json).map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("{e:?}")))
 }
 
+pub async fn get_top_domains_for_range(State(pool): State<PgPool>, Query(params): Query<TimeParams>) -> Result<Json<Vec<DomainReport>>, (axum::http::StatusCode, String)> {
+    let start = params.start.unwrap_or(0);
+    let end = params.end.unwrap_or_else(|| chrono::Utc::now().timestamp());
+    db::top_domains_for_range(&pool, start, end).await.map(Json).map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("{e:?}")))
+}
+
 pub async fn get_domain_users(State(pool): State<PgPool>, Query(params): Query<SearchParams>) -> Result<Json<Vec<DomainUserReport>>, (axum::http::StatusCode, String)> {
     let query = params.q.unwrap_or_default();
     if query.is_empty() { return Ok(Json(Vec::new())); }
     db::search_domain(&pool, &query).await.map(Json).map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("{e:?}")))
+}
+
+pub async fn get_domain_users_for_range(State(pool): State<PgPool>, Query(params): Query<SearchParams>) -> Result<Json<Vec<DomainUserReport>>, (axum::http::StatusCode, String)> {
+    let query = params.q.unwrap_or_default();
+    if query.is_empty() { return Ok(Json(Vec::new())); }
+    let start = params.start.unwrap_or(0);
+    let end = params.end.unwrap_or_else(|| chrono::Utc::now().timestamp());
+    db::search_domain_for_range(&pool, &query, start, end).await.map(Json).map_err(|e| (axum::http::StatusCode::INTERNAL_SERVER_ERROR, format!("{e:?}")))
 }

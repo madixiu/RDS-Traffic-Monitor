@@ -29,6 +29,8 @@ async fn main() -> anyhow::Result<()> {
         .route("/api/reports/all-time", get(api::get_all_time_reports))
         .route("/api/reports/top-domains", get(api::get_top_domains))
         .route("/api/reports/search", get(api::get_domain_users))
+        .route("/api/reports/domains", get(api::get_top_domains_for_range))
+        .route("/api/reports/domain-users", get(api::get_domain_users_for_range))
         
         .fallback_service(ServeDir::new("frontend/dist"))
         .layer(CorsLayer::permissive())

@@ -64,9 +64,15 @@ Traffic statistics are sent to a central PostgreSQL database. A lightweight Rust
 - Batched database writes with retry handling.
 - REST API for user traffic summaries and host status.
 - Server-Sent Events for live dashboard updates.
+- Dashboard time ranges from 15 minutes to all recorded time, with live rolling 15-minute and one-hour views and refreshable snapshots for other ranges.
+- Estimated live upload and download rates based on changes in recent traffic buckets between stream updates.
+- Traffic reports with user and domain rankings, bandwidth breakdowns, and domain investigation for the selected time range.
+- Selectable Terminal, Dracula, Nord, and Light themes, saved in the browser.
 - React, Vite, and Tailwind CSS v4 frontend.
 - Linux-hosted dashboard with Windows agents deployed separately.
 - LAN-oriented dashboard access.
+
+The dashboard and reports use the available minute-level `traffic_logs` records. Report totals exclude the same system accounts as the dashboard; domain rankings combine uploads and downloads. Live rates reflect newly recorded bytes between updates, not instantaneous link throughput: batching, database delays, corrections, and late data can affect the estimate. Rates are unavailable until two samples arrive and after a disconnect. Historical views are snapshots, so refresh them to update their time window. The legacy report APIs (`all-time`, `top-domains`, and `search`) still use `traffic_daily`, which requires a separate aggregation process.
 
 ## Repository Structure
 

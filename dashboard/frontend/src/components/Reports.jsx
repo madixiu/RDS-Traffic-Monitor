@@ -1,118 +1,120 @@
-import { useEffect, useState } from "react";
-import { fetchAllTimeReports, fetchTopDomains, searchDomainUsers } from "../api/client.js";
+import { useEffect, useMemo, useState } from "react";
+import { fetchUsers, fetchTopDomains, searchDomainUsers } from "../api/client.js";
 import { formatBytes } from "../utils/format.js";
 import { Search } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from "recharts";
 
-export function Reports() {
+export function Reports({ start, end, refresh }) {
   const [users, setUsers] = useState([]);
-  const [topDomains, setTopDomains] = useState([]);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState([]);
+  const [domains, setDomains] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [query, setQuery] = useState("");
+  const [submittedQuery, setSubmittedQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [searchRevision, setSearchRevision] = useState(0);
 
   useEffect(() => {
-    fetchAllTimeReports().then(setUsers).catch(console.error);
-    fetchTopDomains().then(setTopDomains).catch(console.error);
-  }, []);
+    let active = true;
+    setLoading(true);
+    setError("");
+    setUsers([]);
+    setDomains([]);
+    Promise.all([fetchUsers(start, end), fetchTopDomains(start, end)])
+      .then(([nextUsers, nextDomains]) => {
+        if (active) { setUsers(nextUsers); setDomains(nextDomains); }
+      })
+      .catch((err) => { if (active) setError(`Could not load report: ${err.message}`); })
+      .finally(() => { if (active) setLoading(false); });
+    return () => { active = false; };
+  }, [start, end, refresh]);
 
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
-    try {
-      const results = await searchDomainUsers(searchQuery);
-      setSearchResults(results);
-    } catch (err) { console.error(err); }
-  };
+  useEffect(() => {
+    if (!submittedQuery) return;
+    let active = true;
+    setSearchLoading(true);
+    setSearchError("");
+    setResults([]);
+    searchDomainUsers(submittedQuery, start, end)
+      .then((data) => { if (active) setResults(data); })
+      .catch((err) => { if (active) setSearchError(`Could not search domains: ${err.message}`); })
+      .finally(() => { if (active) setSearchLoading(false); });
+    return () => { active = false; };
+  }, [submittedQuery, start, end, refresh, searchRevision]);
 
-  const maxUsage = Math.max(...users.map(u => u.bytes_recv + u.bytes_sent), 1);
-  const chartData = users.slice(0, 10).map(u => ({
-    name: u.username,
-    percentage: Math.round(((u.bytes_recv + u.bytes_sent) / maxUsage) * 100)
+  const totals = useMemo(() => users.reduce((acc, user) => ({
+    sent: acc.sent + user.bytes_sent,
+    received: acc.received + user.bytes_recv,
+  }), { sent: 0, received: 0 }), [users]);
+  const chartData = users.slice(0, 10).map((u) => ({
+    name: u.username, total: u.bytes_sent + u.bytes_recv,
   }));
+  const maxDomain = domains.length ? domains[0].bytes_sent + domains[0].bytes_recv : 0;
 
   return (
-    <div className="max-w-7xl mx-auto space-y-4">
-      <header className="border-b border-[#222] pb-4 mb-4">
-        <h1 className="text-xl font-bold text-white tracking-wider flex items-center gap-2">
-          <span className="text-[#00ff41]">&gt;</span> ALL_TIME_REPORTS
-        </h1>
-      </header>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Bar Chart */}
-        <div className="border border-[#222] bg-black p-4">
-          <h2 className="text-xs text-gray-400 mb-4">// RELATIVE_USER_USAGE</h2>
-          <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData} layout="vertical" margin={{ left: 10, right: 10 }}>
-                <XAxis type="number" domain={[0, 100]} hide />
-                <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: '#666', fontSize: 11, fontFamily: 'monospace' }} width={90} />
-                <Tooltip cursor={{ fill: '#111' }} contentStyle={{ backgroundColor: '#000', borderColor: '#00ff41', color: '#00ff41', fontSize: '12px' }} formatter={(val) => [`${val}%`, "Usage"]} />
-                <Bar dataKey="percentage" radius={[0, 0, 0, 0]} barSize={12}>
-                  {chartData.map((_, index) => <Cell key={`cell-${index}`} fill={index === 0 ? "#00ff41" : "#00ffff"} />)}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+    <div className="report-page">
+      {error && <div className="error-message" role="alert">{error}</div>}
+      {loading ? <div className="empty-state">Loading report...</div> : !error && <>
+        <div className="report-stats">
+          {[
+            ["TOTAL TRAFFIC", formatBytes(totals.sent + totals.received)],
+            ["DOWNLOAD", formatBytes(totals.received)],
+            ["UPLOAD", formatBytes(totals.sent)],
+            ["USERS", users.length],
+          ].map(([label, value]) => <div className="report-stat" key={label}><span>{label}</span><strong>{value}</strong></div>)}
         </div>
-
-        {/* Top Domains */}
-        <div className="border border-[#222] bg-black p-4 flex flex-col">
-          <h2 className="text-xs text-gray-400 mb-4">// TOP_DOMAINS</h2>
-          <div className="flex-1 overflow-y-auto">
-            <table className="w-full text-xs text-left">
-              <tbody className="divide-y divide-[#111]">
-                {topDomains.map((d, i) => (
-                  <tr key={d.website} className="hover:bg-[#111]">
-                    <td className="py-1.5 text-gray-500 w-6">{i + 1}.</td>
-                    <td className="py-1.5 text-[#00ffff] truncate max-w-[200px]">{d.website}</td>
-                    <td className="py-1.5 text-right text-[#00ff41]">{formatBytes(d.bytes_recv)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+        <div className="report-grid">
+          <section className="report-panel">
+            <div className="panel-heading"><div><h2>Top users</h2><p>Ranked by total traffic</p></div><span>TOP 10</span></div>
+            {chartData.length ? <div className="chart-container">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData} layout="vertical" margin={{ left: 0, right: 20 }}>
+                  <XAxis type="number" hide />
+                  <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} tick={{ fill: "var(--muted)", fontSize: 11 }} width={110} />
+                  <Tooltip cursor={{ fill: "var(--surface-alt)" }} contentStyle={{ backgroundColor: "var(--surface)", borderColor: "var(--border)", color: "var(--text)" }} formatter={(value) => [formatBytes(value), "Total traffic"]} />
+                  <Bar dataKey="total" fill="var(--accent)" barSize={12} />
+                </BarChart>
+              </ResponsiveContainer>
+            </div> : <div className="empty-state">No traffic in this period.</div>}
+          </section>
+          <section className="report-panel">
+            <div className="panel-heading"><div><h2>Top domains</h2><p>Upload and download combined</p></div><span>TOP 10</span></div>
+            {domains.length ? <div className="domain-list">{domains.map((domain, i) => {
+              const total = domain.bytes_sent + domain.bytes_recv;
+              return <div className="domain-row" key={domain.website}>
+                <span className="domain-rank">{String(i + 1).padStart(2, "0")}</span>
+                <div className="domain-name"><span title={domain.website}>{domain.website}</span><div className="domain-track"><div style={{ width: `${maxDomain ? total / maxDomain * 100 : 0}%` }} /></div></div>
+                <strong>{formatBytes(total)}</strong>
+              </div>;
+            })}</div> : <div className="empty-state">No domains in this period.</div>}
+          </section>
         </div>
-      </div>
-
-      {/* Search */}
-      <div className="border border-[#222] bg-black p-4">
-        <h2 className="text-xs text-gray-400 mb-3">// DOMAIN_INVESTIGATION</h2>
-        <form onSubmit={handleSearch} className="flex gap-2 mb-4">
-          <div className="relative flex-1">
-            <Search className="absolute left-2 top-1/2 -translate-y-1/2 text-gray-600" size={14} />
-            <input
-              type="text"
-              placeholder="grep domain..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-[#050505] border border-[#333] pl-8 pr-3 py-1.5 text-sm text-[#00ff41] focus:outline-none focus:border-[#00ff41] transition-all font-mono placeholder:text-gray-700"
-            />
-          </div>
-          <button type="submit" className="px-4 py-1.5 border border-[#00ff41] text-[#00ff41] hover:bg-[#00ff41] hover:text-black font-bold text-xs transition-colors">
-            EXECUTE
-          </button>
+        <section className="report-panel">
+          <div className="panel-heading"><div><h2>User breakdown</h2><p>All users in the selected period</p></div><span>{users.length} USERS</span></div>
+          <div className="overflow-x-auto"><table className="report-table"><thead><tr><th>User</th><th>Hosts</th><th>Upload</th><th>Download</th><th>Total</th><th>Share</th></tr></thead>
+            <tbody>{users.map((u) => {
+              const total = u.bytes_sent + u.bytes_recv;
+              const all = totals.sent + totals.received;
+              return <tr key={u.username}><td>{u.username}</td><td>{u.hostname}</td><td>{formatBytes(u.bytes_sent)}</td><td>{formatBytes(u.bytes_recv)}</td><td>{formatBytes(total)}</td><td>{all ? (total / all * 100).toFixed(1) : "0.0"}%</td></tr>;
+            })}</tbody></table></div>
+          {!users.length && <div className="empty-state">No users in this period.</div>}
+        </section>
+      </>}
+      <section className="report-panel">
+        <div className="panel-heading"><div><h2>Domain investigation</h2><p>Find users whose recorded domains contain your search.</p></div></div>
+        <form className="search-form" onSubmit={(e) => { e.preventDefault(); const value = query.trim(); if (value) { setSubmittedQuery(value); setSearchRevision((n) => n + 1); } }}>
+          <label className="search-input"><Search size={16} /><input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search a domain..." aria-label="Search a domain" /></label>
+          <button type="submit" disabled={!query.trim()}>Search</button>
         </form>
-
-        {searchQuery && (
-          <table className="w-full text-xs text-left">
-            <thead className="text-gray-500 border-b border-[#222]">
-              <tr>
-                <th className="pb-2 font-normal">USER</th>
-                <th className="pb-2 font-normal text-right">DOWNLOAD</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-[#111]">
-              {searchResults.map((u) => (
-                <tr key={u.username} className="hover:bg-[#111]">
-                  <td className="py-1.5 text-[#00ffff]">{u.username}</td>
-                  <td className="py-1.5 text-right text-[#00ff41]">{formatBytes(u.bytes_recv)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
+        {searchError && <div className="error-message" role="alert">{searchError}</div>}
+        {searchLoading ? <div className="empty-state">Searching...</div> : submittedQuery && !searchError && <>
+          <p className="search-caption">Results for “{submittedQuery}” · {results.length} users</p>
+          {results.length ? <div className="overflow-x-auto"><table className="report-table"><thead><tr><th>User</th><th>Upload</th><th>Download</th><th>Total</th></tr></thead>
+            <tbody>{results.map((u) => <tr key={u.username}><td>{u.username}</td><td>{formatBytes(u.bytes_sent)}</td><td>{formatBytes(u.bytes_recv)}</td><td>{formatBytes(u.bytes_sent + u.bytes_recv)}</td></tr>)}</tbody></table></div> : <div className="empty-state">No matching traffic in this period.</div>}
+        </>}
+      </section>
     </div>
   );
 }
